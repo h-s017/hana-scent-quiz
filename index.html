@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>香氣人格測驗｜H.FUGUE ATELIER</title>
+  <style>
+    :root{
+      --bg:#f7f7f5; --paper:#ffffff; --ink:#171717; --soft-ink:#55524e;
+      --muted:#8b8782; --line:#e3e0dc; --line-dark:#c8c2bb;
+      --accent:#6d716a; --accent-soft:#f0f2ee;
+      --shadow:0 18px 45px rgba(20,20,20,.07);
+      --radius-lg:28px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",Arial,sans-serif;
+      background:radial-gradient(circle at 15% 0%, rgba(218,222,214,.65), transparent 34%),
+                 linear-gradient(180deg,#fbfbfa 0%,#f2f2ef 100%);
+      color:var(--ink);
+      line-height:1.75;
+    }
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:-1;
+      background-image:linear-gradient(rgba(0,0,0,.018) 1px, transparent 1px),
+                       linear-gradient(90deg, rgba(0,0,0,.014) 1px, transparent 1px);
+      background-size:46px 46px; opacity:.55;
+    }
+    .shell{width:min(980px,92vw); margin:34px auto 72px}
+    .brand-bar{
+      display:flex; justify-content:space-between; align-items:center; gap:16px;
+      margin-bottom:18px; color:var(--soft-ink); font-size:12px;
+      letter-spacing:.12em; text-transform:uppercase;
+    }
+    .brand-mark{font-weight:700;color:var(--ink)}
+    .hero,.card{
+      background:rgba(255,255,255,.9); border:1px solid var(--line);
+      border-radius:var(--radius-lg); box-shadow:var(--shadow);
+    }
+    .hero{padding:42px; position:relative; overflow:hidden}
+    .hero::after{
+      content:""; position:absolute; width:280px; height:280px; right:-120px; top:-130px;
+      border:1px solid rgba(109,113,106,.22); border-radius:50%;
+    }
+    .eyebrow{color:var(--accent);letter-spacing:.18em;text-transform:uppercase;font-size:12px;margin-bottom:12px}
+    h1{margin:0;font-size:clamp(32px,5vw,54px);line-height:1.18;font-weight:500}
+    .hero-subtitle{margin:18px 0 0;width:min(720px,100%);color:var(--soft-ink);font-size:16px}
+    .hero-meta{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+    .pill{border:1px solid var(--line-dark);background:rgba(255,255,255,.7);border-radius:999px;padding:7px 12px;font-size:12px}
+    .card{padding:30px;margin-top:22px}
+    .section-title{
+      display:flex; justify-content:space-between; gap:14px; align-items:flex-start;
+      border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:22px;
+    }
+    h2{margin:0;font-size:22px;font-weight:520;letter-spacing:.04em}
+    .section-note{margin:4px 0 0;color:var(--muted);font-size:13px}
+    .progress{min-width:98px;text-align:right;color:var(--accent);font-size:13px}
+    .field{margin-bottom:22px}
+    .label{display:block;font-weight:600;margin-bottom:9px;letter-spacing:.02em}
+    .hint{margin:-4px 0 10px;color:var(--muted);font-size:13px}
+    input[type="text"],textarea{
+      width:100%; border:1px solid var(--line-dark); border-radius:14px;
+      padding:13px 14px; background:#fff; color:var(--ink); font-size:16px; outline:none;
+    }
+    textarea{min-height:104px;resize:vertical}
+    input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(109,113,106,.12)}
+    .option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .option,.answer{
+      display:flex; gap:10px; align-items:flex-start; padding:13px 14px;
+      border:1px solid var(--line); border-radius:14px; background:#fff; cursor:pointer;
+      transition:.16s ease; color:#2c2b29;
+    }
+    .option:hover,.answer:hover{border-color:var(--line-dark);background:#fafafa;transform:translateY(-1px)}
+    .option input,.answer input{margin-top:6px;accent-color:var(--accent)}
+    .question{border:1px solid var(--line);border-radius:22px;background:#fff;padding:22px;margin-bottom:16px}
+    .question-head{display:flex;gap:12px;align-items:flex-start;margin-bottom:14px}
+    .q-num{
+      flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:var(--accent-soft);
+      display:grid;place-items:center;color:var(--accent);font-weight:700;font-size:13px;
+    }
+    .q-title{font-weight:650;font-size:17px;line-height:1.55}
+    .answer-grid{display:grid;gap:10px}
+    .answer-code{color:var(--accent);font-weight:800;min-width:20px}
+    .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:22px}
+    button{
+      border:0;border-radius:999px;padding:14px 22px;font-size:15px;font-weight:700;
+      cursor:pointer;transition:.18s ease;
+    }
+    .btn-primary{background:var(--ink);color:#fff}
+    .btn-primary:hover{transform:translateY(-1px);background:#2c2c2b}
+    .btn-secondary{background:var(--accent-soft);color:#363a34}
+    .btn-line{background:#fff;color:#333;border:1px solid var(--line-dark)}
+    .result{display:none}.result.show{display:block}
+    .result-hero{
+      background:linear-gradient(135deg,#f3f4f1 0%,#ffffff 52%,#f4f0eb 100%);
+      border:1px solid var(--line);border-radius:24px;padding:26px;margin-bottom:18px;
+    }
+    .result-kicker{color:var(--accent);letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+    .result-type{font-size:clamp(26px,4vw,38px);line-height:1.25;margin:8px 0 7px;font-weight:520}
+    .result-english{color:var(--soft-ink);font-size:15px}
+    .tag-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+    .tag{background:#fff;border:1px solid var(--line-dark);border-radius:999px;padding:6px 11px;font-size:13px}
+    .score-board{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin:18px 0}
+    .score{background:#fff;border:1px solid var(--line);border-radius:16px;text-align:center;padding:12px 6px}
+    .score span{display:block;color:var(--muted);font-size:12px}
+    .score strong{display:block;font-size:22px;color:var(--accent);line-height:1.1}
+    .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+    .result-block{background:#fff;border:1px solid var(--line);border-radius:18px;padding:19px}
+    .result-block.full{grid-column:1/-1}
+    .result-block h3{margin:0 0 8px;font-size:16px;color:#333}
+    .result-block p{margin:0;color:var(--soft-ink);font-size:15px}
+    .summary-box{
+      white-space:pre-wrap;background:#fbfaf8;border:1px dashed #bbb4ad;border-radius:16px;
+      padding:17px;color:#353330;font-size:14px;max-height:360px;overflow:auto;
+    }
+    .notice{border-left:3px solid var(--accent);padding:12px 14px;background:#f7f8f5;color:var(--soft-ink);border-radius:10px;margin-top:14px;font-size:13px}
+    .consent{background:#fbfaf8;border:1px solid var(--line);border-radius:16px;padding:15px;color:var(--soft-ink);font-size:14px}
+    .consent label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+    .consent input{margin-top:7px;accent-color:var(--accent)}
+    .required{color:#9b4d4d}
+    .toast{
+      position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(18px);
+      background:#1f1f1d;color:#fff;padding:12px 18px;border-radius:999px;opacity:0;
+      pointer-events:none;transition:.2s ease;z-index:20;font-size:14px;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    @media(max-width:720px){
+      .shell{width:min(100% - 28px,980px);margin:18px auto 54px}
+      .brand-bar{font-size:10px;gap:8px;display:block}
+      .hero{padding:30px 22px;border-radius:24px}
+      .card{padding:21px;border-radius:24px}
+      .section-title{display:block}.progress{text-align:left;margin-top:6px}
+      .option-grid{grid-template-columns:1fr}
+      .question{padding:17px;border-radius:20px}.q-title{font-size:16px}
+      .answer,.option{padding:14px 13px;min-height:52px}
+      .actions{display:grid;grid-template-columns:1fr}button{width:100%;padding:15px 18px}
+      .score-board{grid-template-columns:repeat(2,1fr);gap:8px}.score{padding:10px 4px;border-radius:13px}
+      .score strong{font-size:21px}.result-grid{grid-template-columns:1fr}.result-block.full{grid-column:auto}
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="brand-bar">
+      <div class="brand-mark">H.FUGUE ATELIER｜by Hana's Scent Artist</div>
+      <div>The Art of Scent Composition</div>
+    </div>
+
+    <section class="hero">
+      <div class="eyebrow">Scent Portrait Quiz</div>
+      <h1>香氣人格測驗</h1>
+      <p class="hero-subtitle">這是一份以心理傾向、感官偏好與藝術聯想設計的香氣測驗。完成後，你會獲得一組專屬香氣肖像、適合香調與體驗課配方方向。</p>
+      <div class="hero-meta">
+        <span class="pill">10 題直覺選擇</span>
+        <span class="pill">每題 4 個選項</span>
+        <span class="pill">推薦香調與配方方向</span>
+      </div>
+    </section>
+
+    <form id="quizForm">
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>第一部分｜香氣人格測驗</h2>
+            <p class="section-note">請依第一直覺選擇最接近你的答案，不需要思考標準答案。</p>
+          </div>
+          <div class="progress">Step 01</div>
+        </div>
+        <div id="questions"></div>
+      </section>
+
+      <section class="card">
+        <div class="section-title">
+          <div>
+            <h2>第二部分｜課程資料蒐集</h2>
+            <p class="section-note">用於課堂解析、學習紀錄與後續課程建議。</p>
+          </div>
+          <div class="progress">Step 02</div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="studentName">1. 名字 <span class="required">*</span></label>
+          <input id="studentName" type="text" placeholder="喜歡別人怎麼稱呼你" required />
+        </div>
+
+        <div class="field">
+          <label class="label">2. 性別</label>
+          <div class="option-grid">
+            <label class="option"><input type="radio" name="gender" value="女" />女</label>
+            <label class="option"><input type="radio" name="gender" value="男" />男</label>
+            <label class="option"><input type="radio" name="gender" value="不透露" />不透露</label>
+            <label class="option"><input type="radio" name="gender" value="其他" />其他</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">3. 目前上過哪些調香課？</label>
+          <p class="hint">可複選。</p>
+          <div class="option-grid">
+            <label class="option"><input type="checkbox" name="courses" value="沒有上過，第一次接觸" />沒有上過，第一次接觸</label>
+            <label class="option"><input type="checkbox" name="courses" value="香水體驗課" />香水體驗課</label>
+            <label class="option"><input type="checkbox" name="courses" value="蠟燭／擴香／香氛噴霧課" />蠟燭／擴香／香氛噴霧課</label>
+            <label class="option"><input type="checkbox" name="courses" value="調香師證書課程" />調香師證書課程</label>
+            <label class="option"><input type="checkbox" name="courses" value="天然精油／芳療課程" />天然精油／芳療課程</label>
+            <label class="option"><input type="checkbox" name="courses" value="品牌香氛／商業調香課程" />品牌香氛／商業調香課程</label>
+          </div>
+          <div style="margin-top:10px;">
+            <input id="coursesOther" type="text" placeholder="其他課程，可自行填寫" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label">4. 今天來上課的目的</label>
+          <p class="hint">可複選。</p>
+          <div class="option-grid">
+            <label class="option"><input type="checkbox" name="purpose" value="興趣學習" />興趣學習</label>
+            <label class="option"><input type="checkbox" name="purpose" value="想增加技能" />想增加技能</label>
+            <label class="option"><input type="checkbox" name="purpose" value="未來想創業" />未來想創業</label>
+            <label class="option"><input type="checkbox" name="purpose" value="已經有品牌來進修" />已經有品牌來進修</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="favoritePerfume">5. 你喜歡的香水名稱或品牌</label>
+          <input id="favoritePerfume" type="text" placeholder="例如：Chanel Chance、Jo Malone 鼠尾草與海鹽、Le Labo Another 13，也可以填沒有特別喜歡的" />
+        </div>
+
+        <div class="field">
+          <label class="label">6. 目前偏好的香調類型</label>
+          <p class="hint">可複選。</p>
+          <div class="option-grid">
+            <label class="option"><input type="checkbox" name="preferredFamily" value="柑橘／清新" />柑橘／清新</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="花香" />花香</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="果香" />果香</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="木質" />木質</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="茶感／綠意" />茶感／綠意</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="琥珀／東方" />琥珀／東方</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="美食／甜感" />美食／甜感</label>
+            <label class="option"><input type="checkbox" name="preferredFamily" value="西普／馥奇／苔蘚" />西普／馥奇／苔蘚</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="studyMore">7. 還有什麼想要進修？</label>
+          <textarea id="studyMore" placeholder="例如：香水調香、品牌香氛設計、證照課程、創業、法規安全、配方修正等"></textarea>
+        </div>
+
+        <div class="field consent">
+          <label>
+            <input id="consent" type="checkbox" required />
+            <span>填寫本測驗即同意 Hana老師將資料用於課程解析、學習紀錄與後續課程建議，不會公開個人資料。</span>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary">查看香氣解析</button>
+          <button type="button" class="btn-secondary" id="resetBtn">重新填寫</button>
+        </div>
+      </section>
+    </form>
+
+    <section class="card result" id="resultSection">
+      <div class="section-title">
+        <div>
+          <h2>第三部分｜你的香氣解析</h2>
+          <p class="section-note">可直接複製給老師作為課堂紀錄。</p>
+        </div>
+        <div class="progress">Result</div>
+      </div>
+
+      <div class="result-hero">
+        <div class="result-kicker">Your Scent Portrait</div>
+        <div class="result-type" id="resultType"></div>
+        <div class="result-english" id="resultEnglish"></div>
+        <div class="tag-row" id="tagRow"></div>
+      </div>
+
+      <div class="score-board" id="scoreBoard"></div>
+
+      <div class="result-grid">
+        <div class="result-block full"><h3>香氣肖像解析</h3><p id="resultDesc"></p></div>
+        <div class="result-block"><h3>適合香調</h3><p id="resultFamilies"></p></div>
+        <div class="result-block"><h3>推薦原料方向</h3><p id="resultMaterials"></p></div>
+        <div class="result-block full"><h3>體驗課推薦配方方向</h3><p id="resultFormula"></p></div>
+        <div class="result-block full"><h3>創作建議</h3><p id="resultAdvice"></p></div>
+        <div class="result-block full">
+          <h3>給老師的摘要</h3>
+          <div class="summary-box" id="summaryBox"></div>
+          <div class="actions">
+            <button type="button" class="btn-primary" id="copyBtn">複製摘要</button>
+            <button type="button" class="btn-line" id="printBtn">列印結果</button>
+          </div>
+          <div class="notice" id="submitNotice">目前為單機測驗版。若要自動寫入 Google Sheet，請在程式碼中貼上 Apps Script Web App URL。</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast">已完成</div>
+
+  <script>
+    const GOOGLE_SCRIPT_URL = "";
+
+    const questions = [
+      {
+        title:"走進一個陌生空間，你最先注意到的是？",
+        options:[
+          {text:"光線、空氣感，以及整體是否乾淨舒服", codes:["A","F"]},
+          {text:"花藝、色彩、裝飾與細節美感", codes:["B"]},
+          {text:"木頭、皮革、紙張、家具等材質質感", codes:["C","G"]},
+          {text:"這個地方有沒有故事、轉折或不尋常的氣氛", codes:["D","E"]}
+        ]
+      },
+      {
+        title:"如果用一種天氣形容你，你會選？",
+        options:[
+          {text:"清晨微風，明亮、清楚、沒有壓迫感", codes:["A"]},
+          {text:"春天午後花園，柔和、細膩、有畫面", codes:["B"]},
+          {text:"秋天森林，安靜、乾燥、有時間感", codes:["C","G"]},
+          {text:"傍晚暖光或雨前空氣，有情緒也有神祕感", codes:["D","E","F"]}
+        ]
+      },
+      {
+        title:"你最喜歡哪一種旅行畫面？",
+        options:[
+          {text:"海邊、白色建築、乾淨明亮的城市", codes:["A","F"]},
+          {text:"花園、古典建築、優雅咖啡館", codes:["B"]},
+          {text:"山林、木屋、老書店或工藝小鎮", codes:["C","G"]},
+          {text:"市集、甜點店、博物館、老宅或異國巷弄", codes:["D","E"]}
+        ]
+      },
+      {
+        title:"你做事情的方式比較像？",
+        options:[
+          {text:"先整理架構，再開始行動", codes:["A"]},
+          {text:"跟著感覺走，但很重視美感", codes:["B"]},
+          {text:"慢慢累積，喜歡穩定與深度", codes:["C","G"]},
+          {text:"重視現場氣氛，也喜歡做出自己的風格", codes:["D","E","F"]}
+        ]
+      },
+      {
+        title:"你希望別人怎麼形容你？",
+        options:[
+          {text:"乾淨、理性、有分寸", codes:["A"]},
+          {text:"優雅、細膩、有品味", codes:["B"]},
+          {text:"沉穩、成熟、有深度", codes:["C","G"]},
+          {text:"溫暖、有個性、讓人印象深刻", codes:["D","E","F"]}
+        ]
+      },
+      {
+        title:"你最容易被哪種香氣吸引？",
+        options:[
+          {text:"柑橘、茶感、皂感、海風感", codes:["A","F"]},
+          {text:"玫瑰、茉莉、橙花、柔和花香", codes:["B"]},
+          {text:"雪松、檀香、岩蘭草、乾燥木質", codes:["C"]},
+          {text:"香草、琥珀、苔蘚、皮革、辛香或樹脂感", codes:["D","E","G"]}
+        ]
+      },
+      {
+        title:"如果要創作一支香，你最想表達的是？",
+        options:[
+          {text:"清醒、透明、自由", codes:["A","F"]},
+          {text:"美、柔軟、浪漫記憶", codes:["B"]},
+          {text:"安定、時間感、內在力量", codes:["C","G"]},
+          {text:"溫度、陪伴、故事、神祕與轉折", codes:["D","E"]}
+        ]
+      },
+      {
+        title:"在調香課裡，你最期待哪個部分？",
+        options:[
+          {text:"了解香調分類、結構和比例", codes:["A","G"]},
+          {text:"聞香、形容氣味、建立感官詞彙", codes:["B","F"]},
+          {text:"學會穩定做出成熟、有質感的配方", codes:["C"]},
+          {text:"做出自己喜歡、能送人或有概念的作品", codes:["D","E"]}
+        ]
+      },
+      {
+        title:"如果你的香氣是一段音樂，它比較像？",
+        options:[
+          {text:"清楚俐落的前奏，乾淨而有節拍", codes:["A"]},
+          {text:"柔和弦樂旋律，細膩而有畫面", codes:["B"]},
+          {text:"低音大提琴或古典室內樂，穩定、有餘韻", codes:["C","G"]},
+          {text:"極簡鋼琴、溫暖和聲或帶轉調的現代樂", codes:["D","E","F"]}
+        ]
+      },
+      {
+        title:"如果用一幅畫形容你的美感，你會選？",
+        options:[
+          {text:"大量留白與乾淨線條", codes:["A","F"]},
+          {text:"花卉、人物、柔光與裝飾性線條", codes:["B"]},
+          {text:"木頭、石材、大地色與厚實肌理", codes:["C"]},
+          {text:"暗色背景、古典肖像、舊紙張與時間感", codes:["D","E","G"]}
+        ]
+      }
+    ];
+
+    const profiles = {
+      A:{type:"清透柑橘型", english:"Citrus Clarity", short:"清新", tags:["清透","理性","空氣感","秩序"], desc:"你偏好乾淨、透明、有秩序感的氣味。你對過度濃烈或模糊的香氣較敏感，適合從清楚的香氣輪廓開始建立配方。", families:"柑橘調、清新調、茶香調、皂感、輕盈芳香調。", materials:"Bergamot、Lime、Lemon、Petitgrain、Neroli、Hedione、Lavender。", formula:"柑橘 35%＋透明花香 25%＋茶感或綠意 20%＋白麝香 20%。", advice:"配方重點是乾淨的前調與明確的香氣邊界，不要一開始放太多甜感或厚重木質。"},
+      B:{type:"柔光花園型", english:"Soft Floral Garden", short:"花香", tags:["優雅","細膩","畫面感","柔光"], desc:"你對美感、情緒和細節敏銳，容易被柔和、有畫面感的花香吸引。你的作品適合保留主旋律，呈現優雅但不雜亂的花香層次。", families:"玫瑰調、白花調、橙花調、粉感花香、柔和花果香。", materials:"Rose、Jasmine、Neroli、Orange Blossom、Peony、Hedione、Benzyl Acetate。", formula:"主花香 35%＋透明花香 25%＋果香修飾 15%＋柔和麝香或木質 25%。", advice:"適合練習主花材＋陪襯花材＋透明修飾。避免把所有花香平均加入，主角要清楚。"},
+      C:{type:"木質定錨型", english:"Woody Ground", short:"木質", tags:["沉穩","內斂","質地","深度"], desc:"你偏好穩定、沉著、有質地的氣味。比起立即討喜，你更重視後味、層次和時間感。", families:"木質調、檀香調、雪松調、岩蘭草調、乾燥木質、礦物木質。", materials:"Cedarwood、Sandalwood、Vetiver、Patchouli、Iso E Super、Ambroxan、Cashmeran。", formula:"木質 45%＋透明花香 20%＋柑橘或芳香調 15%＋琥珀／麝香 20%。", advice:"適合從木質骨架開始，重點是讓木質有空氣感，避免太乾、太重或太封閉。"},
+      D:{type:"琥珀暖室型", english:"Amber Comfort", short:"暖甜", tags:["溫暖","包覆感","甜感","陪伴"], desc:"你對溫度、陪伴感和記憶感敏銳，容易被甜感、柔軟、包覆性的香氣吸引。", families:"琥珀調、香草調、美食調、奶感、樹脂感、柔和辛香調。", materials:"Vanilla、Tonka Bean、Benzoin、Labdanum、Amber Accord、Cinnamon、Coumarin、Musk。", formula:"琥珀／香草 35%＋柔和花香 20%＋木質 25%＋柑橘或茶感 20%。", advice:"甜感要有節制。用木質、柑橘或茶感拉出空氣感，作品會更成熟。"},
+      E:{type:"迷霧劇場型", english:"Noir Dramatic", short:"個性", tags:["神祕","轉折","辨識度","概念"], desc:"你不只追求好聞，更在意故事、轉折和記憶點。你適合處理有對比、有戲劇性或比較概念化的香氣。", families:"辛香調、樹脂調、煙燻調、皮革調、深色木質、暗色花香。", materials:"Labdanum、Frankincense、Myrrh、Leather Accord、Clove、Patchouli、Ambroxan。", formula:"深色木質／樹脂 35%＋辛香 20%＋暗色花香 20%＋柑橘或芳香調 25%。", advice:"適合練習前後轉折：前調要留一點光，後調再進入深色情緒，避免整支香過於沉重。"},
+      F:{type:"茶水留白型", english:"Tea & Air", short:"茶感", tags:["留白","安靜","呼吸感","平衡"], desc:"你偏好安靜、乾淨、有呼吸感的氣味。你不一定追求強烈辨識度，而是重視舒服、清澈和剛剛好的距離。", families:"茶香調、綠意調、水感調、白麝香、透明花香、輕木質。", materials:"Green Tea、White Tea Accord、Hedione、Muguet、Galaxolide、Ambroxan、Petitgrain。", formula:"茶感／綠意 35%＋透明花香 25%＋白麝香 25%＋輕木質 15%。", advice:"適合做輕盈、乾淨、可日常穿著的作品。關鍵是少即是多，讓配方保留空白。"},
+      G:{type:"苔蘚典藏型", english:"Chypre Archive", short:"典藏", tags:["經典","餘韻","成熟","歷史感"], desc:"你對經典結構、時間感和餘韻有感。你適合學習有架構、有層次、帶一點復古氣質的香氣。", families:"西普調、馥奇調、苔蘚調、粉感木質、皮革調、乾燥花香。", materials:"Oakmoss Accord、Bergamot、Patchouli、Iris、Lavender、Coumarin、Leather Accord。", formula:"柑橘 25%＋苔蘚／廣藿香 30%＋粉感花香 20%＋皮革或木質 25%。", advice:"適合練習經典三段式結構。前調要亮，中後調要有厚度，整體才會耐聞。"}
+    };
+
+    const $ = selector => document.querySelector(selector);
+    const $$ = selector => Array.from(document.querySelectorAll(selector));
+
+    function toast(message){
+      const el = $("#toast");
+      el.textContent = message;
+      el.classList.add("show");
+      setTimeout(() => el.classList.remove("show"), 1800);
+    }
+
+    function renderQuestions(){
+      $("#questions").innerHTML = questions.map((item, index) => {
+        const answers = item.options.map((option, optionIndex) => {
+          const value = option.codes.join(",");
+          const label = String.fromCharCode(65 + optionIndex);
+          return `
+          <label class="answer">
+            <input type="radio" name="q${index + 1}" value="${value}" data-text="${option.text}" />
+            <span class="answer-code">${label}</span>
+            <span>${option.text}</span>
+          </label>`;
+        }).join("");
+        return `<div class="question">
+          <div class="question-head">
+            <div class="q-num">${String(index + 1).padStart(2,"0")}</div>
+            <div class="q-title">${item.title}</div>
+          </div>
+          <div class="answer-grid">${answers}</div>
+        </div>`;
+      }).join("");
+    }
+
+    function valuesByName(name){ return $$(`input[name="${name}"]:checked`).map(el => el.value); }
+    function selectedValue(name){ const el = $(`input[name="${name}"]:checked`); return el ? el.value : ""; }
+    function selectedOptionText(name){ const el = $(`input[name="${name}"]:checked`); return el ? el.dataset.text || "" : ""; }
+
+    function topProfile(scores){
+      const max = Math.max(...Object.values(scores));
+      return Object.keys(scores).filter(key => scores[key] === max);
+    }
+
+    function combinedProfile(keys){
+      if(keys.length === 1) return profiles[keys[0]];
+      const names = keys.map(key => profiles[key].type);
+      return {
+        type:`複合香氣肖像｜${names.join(" × ")}`,
+        english:keys.map(key => profiles[key].english).join(" × "),
+        short:"複合",
+        tags:[...new Set(keys.flatMap(key => profiles[key].tags))],
+        desc:"你的結果呈現複合傾向，代表你不是單一香調取向，而是同時具備多種感受與創作視角。這類學生通常適合從一個主香調出發，再加入第二個傾向作為轉折或修飾。",
+        families:keys.map(key => profiles[key].families).join(" / "),
+        materials:keys.map(key => profiles[key].materials).join(" / "),
+        formula:keys.map(key => profiles[key].formula).join(" 或 "),
+        advice:"請先選一個最想表達的主題作為主香調，再用第二高分的香調做背景、尾韻或情緒轉折。"
+      };
+    }
+
+    function renderScores(scores){
+      $("#scoreBoard").innerHTML = Object.keys(scores).map(key => `
+        <div class="score"><span>${key}｜${profiles[key].short}</span><strong>${scores[key]}</strong></div>`).join("");
+    }
+
+    function buildSummary(payload){
+      return `【香氣人格測驗摘要】
+姓名：${payload.name}
+性別：${payload.gender || "未填寫"}
+上過課程：${payload.courses.length ? payload.courses.join("、") : "未填寫"}
+來上課的目的：${payload.purpose.length ? payload.purpose.join("、") : "未填寫"}
+喜歡的香水名稱或品牌：${payload.favoritePerfume || "未填寫"}
+目前偏好的香調：${payload.preferredFamily.length ? payload.preferredFamily.join("、") : "未填寫"}
+還想進修：${payload.studyMore || "未填寫"}
+
+測驗結果：${payload.profile.type}
+英文分類：${payload.profile.english}
+分數統計：A=${payload.scores.A} / B=${payload.scores.B} / C=${payload.scores.C} / D=${payload.scores.D} / E=${payload.scores.E} / F=${payload.scores.F} / G=${payload.scores.G}
+
+香氣肖像解析：${payload.profile.desc}
+建議香調：${payload.profile.families}
+推薦原料方向：${payload.profile.materials}
+體驗課推薦配方方向：${payload.profile.formula}
+創作建議：${payload.profile.advice}
+
+資料使用同意：${payload.consentText}`;
+    }
+
+    async function sendToGoogleSheet(payload){
+      if(!GOOGLE_SCRIPT_URL) return {ok:false, skipped:true};
+      await fetch(GOOGLE_SCRIPT_URL, {
+        method:"POST",
+        mode:"no-cors",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify(payload)
+      });
+      return {ok:true};
+    }
+
+    $("#quizForm").addEventListener("submit", async event => {
+      event.preventDefault();
+      const answers = [];
+      const answerCodes = [];
+      for(let i=1;i<=questions.length;i++){
+        const answer = selectedValue(`q${i}`);
+        if(!answer){ toast(`第 ${i} 題尚未作答`); return; }
+        const codes = answer.split(",").filter(Boolean);
+        answers.push({ question: questions[i - 1].title, selected: selectedOptionText(`q${i}`), codes });
+        answerCodes.push(...codes);
+      }
+
+      const name = $("#studentName").value.trim();
+      if(!name){ toast("請先填寫名字"); return; }
+      if(!$("#consent").checked){ toast("請勾選資料使用同意"); return; }
+
+      const scores = {A:0,B:0,C:0,D:0,E:0,F:0,G:0};
+      answerCodes.forEach(code => { if(scores[code] !== undefined) scores[code]++; });
+      const profile = combinedProfile(topProfile(scores));
+
+      const courses = valuesByName("courses");
+      const coursesOther = $("#coursesOther").value.trim();
+      if(coursesOther) courses.push(coursesOther);
+
+      const payload = {
+        submittedAt:new Date().toISOString(),
+        name,
+        gender:selectedValue("gender"),
+        courses,
+        purpose:valuesByName("purpose"),
+        favoritePerfume:$("#favoritePerfume").value.trim(),
+        preferredFamily:valuesByName("preferredFamily"),
+        studyMore:$("#studyMore").value.trim(),
+        answers,
+        answerLog:answers.map((item, index) => `${index + 1}. ${item.selected}（${item.codes.join("+")}）`),
+        scores,
+        profile,
+        consentText:"填寫本測驗即同意 Hana老師將資料用於課程解析、學習紀錄與後續課程建議，不會公開個人資料。"
+      };
+
+      $("#resultType").textContent = profile.type;
+      $("#resultEnglish").textContent = profile.english;
+      $("#tagRow").innerHTML = profile.tags.map(tag => `<span class="tag">${tag}</span>`).join("");
+      $("#resultDesc").textContent = profile.desc;
+      $("#resultFamilies").textContent = profile.families;
+      $("#resultMaterials").textContent = profile.materials;
+      $("#resultFormula").textContent = profile.formula;
+      $("#resultAdvice").textContent = profile.advice;
+      renderScores(scores);
+
+      $("#summaryBox").textContent = buildSummary(payload);
+      $("#resultSection").classList.add("show");
+      $("#resultSection").scrollIntoView({behavior:"smooth", block:"start"});
+
+      try{
+        const res = await sendToGoogleSheet(payload);
+        $("#submitNotice").textContent = res.skipped
+          ? "目前為單機測驗版。資料未送出到 Google Sheet；貼上 Apps Script Web App URL 後即可啟用。"
+          : "資料已送出。若 Google Sheet 欄位設定正確，稍後可在表格中查看。";
+      }catch(error){
+        $("#submitNotice").textContent = "結果已產生，但送出 Google Sheet 時發生錯誤。請檢查 Apps Script URL 與權限設定。";
+      }
+    });
+
+    $("#copyBtn").addEventListener("click", async () => {
+      try{
+        await navigator.clipboard.writeText($("#summaryBox").textContent);
+        toast("摘要已複製");
+      }catch(error){ toast("請手動選取複製"); }
+    });
+
+    $("#printBtn").addEventListener("click", () => window.print());
+
+    $("#resetBtn").addEventListener("click", () => {
+      $("#quizForm").reset();
+      $("#resultSection").classList.remove("show");
+      window.scrollTo({top:0, behavior:"smooth"});
+    });
+
+    renderQuestions();
+  </script>
+</body>
+</html>
