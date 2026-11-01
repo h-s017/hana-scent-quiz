@@ -55,7 +55,7 @@
     .field{margin-bottom:22px}
     .label{display:block;font-weight:600;margin-bottom:9px;letter-spacing:.02em}
     .hint{margin:-4px 0 10px;color:var(--muted);font-size:13px}
-    input[type="text"],textarea{
+    input[type="text"],input[type="email"],textarea{
       width:100%;
       border:1px solid var(--line-dark);
       border-radius:14px;
@@ -66,11 +66,12 @@
       outline:none;
     }
     textarea{min-height:104px;resize:vertical}
-    input[type="text"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(109,113,106,.12)}
+    input[type="text"]:focus,input[type="email"]:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(109,113,106,.12)}
     .option-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .option{display:flex;gap:10px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;transition:.16s ease;color:#2c2b29}
     .option:hover{border-color:var(--line-dark);background:#fafafa;transform:translateY(-1px)}
     .option input{margin-top:6px;accent-color:var(--accent)}
+#optInDetails[hidden]{display:none}
     .consent{background:#fbfaf8;border:1px solid var(--line);border-radius:16px;padding:15px;color:var(--soft-ink);font-size:14px}
     .consent label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
     .consent input{margin-top:7px;accent-color:var(--accent)}
@@ -196,6 +197,20 @@
           </div>
         </div>
 
+        <div class="field">
+          <label class="label" for="studentToolsNewsletter">8. 申請學員工具及訂閱《氣味通信》</label>
+          <p class="hint">自由選填，不影響本次課程問卷。勾選後填寫電子郵件，以利後續聯絡。</p>
+          <label class="option">
+            <input id="studentToolsNewsletter" type="checkbox" />
+            <span>我希望申請學員工具，並訂閱《氣味通信》</span>
+          </label>
+          <div id="optInDetails" hidden style="margin-top:12px;">
+            <label class="label" for="optInEmail">接收後續聯絡的電子郵件 <span class="required">*</span></label>
+            <input id="optInEmail" type="email" autocomplete="email" placeholder="name@example.com" />
+            <p class="hint" style="margin-top:8px;">此信箱僅作為學員工具申請聯絡及《氣味通信》訂閱用途。勾選不代表工具已開通或訂閱已完成，後續將另行確認。</p>
+          </div>
+        </div>
+
         <div class="field consent">
           <label>
             <input id="consent" type="checkbox" required />
@@ -259,6 +274,7 @@
 喜歡的香水名稱或品牌：${payload.favoritePerfume || "未填寫"}
 目前偏好的香調：${payload.preferredFamily.length ? payload.preferredFamily.join("、") : "未填寫"}
 本次課程學習需求：${payload.studyMore || "未填寫"}
+學員工具及《氣味通信》：${payload.studentToolsNewsletterOptIn ? "已勾選申請及訂閱意願（待後續確認）" : "未勾選"}${payload.studentToolsNewsletterOptIn ? "\n聯絡 Email：" + payload.studentToolsNewsletterEmail : ""}
 
 資料使用同意：${payload.consentText}`;
     }
@@ -274,11 +290,24 @@
       return {ok:true};
     }
 
+    $("#studentToolsNewsletter").addEventListener("change", event => {
+      const checked = event.target.checked;
+      $("#optInDetails").hidden = !checked;
+      $("#optInEmail").required = checked;
+      if(!checked) $("#optInEmail").value = "";
+    });
+
     $("#intakeForm").addEventListener("submit", async event => {
       event.preventDefault();
       const name = $("#studentName").value.trim();
       if(!name){ toast("請先填寫名字"); return; }
       if(!$("#consent").checked){ toast("請勾選資料使用同意"); return; }
+      const studentToolsNewsletterOptIn = $("#studentToolsNewsletter").checked;
+      const studentToolsNewsletterEmail = studentToolsNewsletterOptIn ? $("#optInEmail").value.trim() : "";
+      if(studentToolsNewsletterOptIn && !$("#optInEmail").checkValidity()){
+        $("#optInEmail").reportValidity();
+        return;
+      }
 
       const courses = valuesByName("courses");
       const coursesOther = $("#coursesOther").value.trim();
@@ -298,6 +327,8 @@
         favoritePerfume:$("#favoritePerfume").value.trim(),
         preferredFamily:valuesByName("preferredFamily"),
         studyMore:studyFocus.join("、"),
+        studentToolsNewsletterOptIn,
+        studentToolsNewsletterEmail,
         answers:[],
         answerLog:[],
         scores:{A:0,B:0,C:0,D:0,E:0,F:0,G:0},
@@ -321,9 +352,9 @@
 
       try{
         await sendToGoogleSheet(payload);
-        $("#submitNotice").textContent = "資料已送出。若 Google Sheet 欄位設定正確，稍後可在表格中查看。";
+        $("#submitNotice").textContent = "資料已送出，感謝您的填寫。您的回覆將作為課程準備參考。" + (studentToolsNewsletterOptIn ? "學員工具及《氣味通信》的申請意願已一併送出，後續將另行確認。" : "");
       }catch(error){
-        $("#submitNotice").textContent = "摘要已產生，但送出 Google Sheet 時發生錯誤。請檢查 Apps Script URL 與權限設定。";
+        $("#submitNotice").textContent = "摘要已產生，但資料傳送未完成。請保留摘要並聯繫老師確認。";
       }
     });
 
@@ -340,6 +371,8 @@
 
     $("#resetBtn").addEventListener("click", () => {
       $("#intakeForm").reset();
+      $("#optInDetails").hidden = true;
+      $("#optInEmail").required = false;
       $("#resultSection").classList.remove("show");
       window.scrollTo({top:0, behavior:"smooth"});
     });
