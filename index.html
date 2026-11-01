@@ -199,7 +199,7 @@
 
         <div class="field">
           <label class="label" for="studentToolsNewsletter">8. 申請學員工具及訂閱《氣味通信》</label>
-          <p class="hint">自由選填，不影響本次課程問卷。勾選後填寫電子郵件，以利後續聯絡。</p>
+          <p class="hint">自由選填，不影響本次課程問卷。勾選後會顯示 Email 欄位；問卷提交成功後，將協助登記氣味通信，並引導您完成學員工具申請。</p>
           <label class="option">
             <input id="studentToolsNewsletter" type="checkbox" />
             <span>我希望申請學員工具，並訂閱《氣味通信》</span>
@@ -207,7 +207,7 @@
           <div id="optInDetails" hidden style="margin-top:12px;">
             <label class="label" for="optInEmail">接收後續聯絡的電子郵件 <span class="required">*</span></label>
             <input id="optInEmail" type="email" autocomplete="email" placeholder="name@example.com" />
-            <p class="hint" style="margin-top:8px;">此信箱僅作為學員工具申請聯絡及《氣味通信》訂閱用途。勾選不代表工具已開通或訂閱已完成，後續將另行確認。</p>
+            <p class="hint" style="margin-top:8px;">勾選即同意 HANA 使用上述姓名及 Email 登記《氣味通信》，接收課程、活動與新品消息，日後可取消訂閱。學員工具仍需自行註冊、驗證 Email，並通過課程資格審核；本欄位不會自動建立帳戶。</p>
           </div>
         </div>
 
@@ -238,12 +238,19 @@
         <button type="button" class="btn-primary" id="copyBtn">複製摘要</button>
         <button type="button" class="btn-line" id="printBtn">列印</button>
       </div>
-      <div class="notice" id="submitNotice">資料送出中。</div>
+      <div class="notice" id="submitNotice" role="status" aria-live="polite">資料送出中。</div>
+      <div class="notice" id="optInNext" hidden>
+        <strong>下一步｜申請學員工具</strong>
+        <p>請前往正式學員入口選擇「首次申請」，填寫帳戶資料並完成 Email 驗證。是否開放學員工具，仍由 HANA 依實際上課紀錄審核。</p>
+        <p><a href="https://hanascent.com/student-tools/?apply=1">前往學員工具首次申請 →</a></p>
+        <p id="newsletterFallback" hidden>如果氣味通信尚未完成訂閱，亦可使用 <a href="https://hanascent.com/member/">氣味通信訂閱頁</a> 再次訂閱。</p>
+      </div>
     </section>
   </main>
 
   <div class="toast" id="toast">已完成</div>
 
+  <script src="https://hanascent.com/assets/cms-config.js"></script>
   <script>
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ-i9zat_U57yJmHkTnEhIYsxNU3l5UMpmHCLkivz06PVtrccQhfS6SzTwnoewTO5t/exec";
     const $ = selector => document.querySelector(selector);
@@ -263,6 +270,34 @@
     function selectedValue(name){
       const el = $("input[name='" + name + "']:checked");
       return el ? el.value : "";
+    }
+
+    async function subscribeNewsletter(name,email){
+      const config = window.HANA_CMS_CONFIG;
+      if(!config?.supabaseUrl || !config?.supabaseAnonKey){
+        throw new Error("氣味通信訂閱服務目前無法連接");
+      }
+      const response = await fetch(config.supabaseUrl + "/rest/v1/email_subscribers",{
+        method:"POST",
+        headers:{
+          "apikey":config.supabaseAnonKey,
+          "Authorization":"Bearer " + config.supabaseAnonKey,
+          "Content-Type":"application/json",
+          "Prefer":"return=minimal"
+        },
+        body:JSON.stringify({
+          name:name.slice(0,80),
+          email:email.toLowerCase(),
+          interests:["調香課程"],
+          source:"course-intake",
+          path:"/quiz/"
+        })
+      });
+      if(response.ok)return "subscribed";
+      let error={};
+      try{error=await response.json();}catch{}
+      if(response.status===409 && error.code==="23505")return "already_subscribed";
+      throw new Error("氣味通信訂閱未完成");
     }
 
     function buildSummary(payload){
@@ -348,14 +383,31 @@
 
       $("#summaryBox").textContent = buildSummary(payload);
       $("#resultSection").classList.add("show");
+      $("#optInNext").hidden = !studentToolsNewsletterOptIn;
+      $("#newsletterFallback").hidden = true;
+      $("#submitNotice").textContent = "正在傳送課程問卷" + (studentToolsNewsletterOptIn ? "，並登記氣味通信訂閱…" : "…");
       $("#resultSection").scrollIntoView({behavior:"smooth", block:"start"});
 
-      try{
-        await sendToGoogleSheet(payload);
-        $("#submitNotice").textContent = "資料已送出，感謝您的填寫。您的回覆將作為課程準備參考。" + (studentToolsNewsletterOptIn ? "學員工具及《氣味通信》的申請意願已一併送出，後續將另行確認。" : "");
-      }catch(error){
-        $("#submitNotice").textContent = "摘要已產生，但資料傳送未完成。請保留摘要並聯繫老師確認。";
+      const submissions = await Promise.allSettled([
+        sendToGoogleSheet(payload),
+        studentToolsNewsletterOptIn ? subscribeNewsletter(name,studentToolsNewsletterEmail) : Promise.resolve("not_requested")
+      ]);
+      const intakeSent = submissions[0].status==="fulfilled";
+      const subscription = submissions[1];
+      let message = intakeSent
+        ? "課程問卷已送出，感謝您的填寫。"
+        : "課程問卷傳送未完成，請保留摘要並聯繫老師確認。";
+      if(studentToolsNewsletterOptIn){
+        if(subscription.status==="fulfilled" && subscription.value==="subscribed"){
+          message += "《氣味通信》已完成訂閱。請繼續下方學員工具申請步驟。";
+        }else if(subscription.status==="fulfilled" && subscription.value==="already_subscribed"){
+          message += "此 Email 已在《氣味通信》訂閱名單中。請繼續下方學員工具申請步驟。";
+        }else{
+          message += "《氣味通信》訂閱尚未完成，請使用下方訂閱頁重新填寫；學員工具申請仍可繼續。";
+          $("#newsletterFallback").hidden = false;
+        }
       }
+      $("#submitNotice").textContent = message;
     });
 
     $("#copyBtn").addEventListener("click", async () => {
@@ -373,6 +425,8 @@
       $("#intakeForm").reset();
       $("#optInDetails").hidden = true;
       $("#optInEmail").required = false;
+      $("#optInNext").hidden = true;
+      $("#newsletterFallback").hidden = true;
       $("#resultSection").classList.remove("show");
       window.scrollTo({top:0, behavior:"smooth"});
     });
