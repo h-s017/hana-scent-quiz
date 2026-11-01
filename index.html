@@ -150,13 +150,13 @@
         </div>
 
         <div class="field">
-          <label class="label">4. 今天來上課的目的</label>
+          <label class="label">4. 進修方向</label>
           <p class="hint">可複選。</p>
           <div class="option-grid">
             <label class="option"><input type="checkbox" name="purpose" value="興趣學習" />興趣學習</label>
-            <label class="option"><input type="checkbox" name="purpose" value="想增加技能" />想增加技能</label>
-            <label class="option"><input type="checkbox" name="purpose" value="未來想創業" />未來想創業</label>
-            <label class="option"><input type="checkbox" name="purpose" value="已經有品牌來進修" />已經有品牌來進修</label>
+            <label class="option"><input type="checkbox" name="purpose" value="想增加專業技能" />想增加專業技能</label>
+            <label class="option"><input type="checkbox" name="purpose" value="未來有意創業" />未來有意創業</label>
+            <label class="option"><input type="checkbox" name="purpose" value="已有品牌，希望進一步精進" />已有品牌，希望進一步精進</label>
           </div>
         </div>
 
@@ -181,8 +181,19 @@
         </div>
 
         <div class="field">
-          <label class="label" for="studyMore">7. 還有什麼想要進修？</label>
-          <textarea id="studyMore" placeholder="例如：香水調香、品牌香氛設計、證照課程、創業、法規安全、配方修正等"></textarea>
+          <label class="label">7. 這次課程中，你最希望深入了解或解決什麼問題？</label>
+          <p class="hint">可複選；也可以在下方補充其他學習需求。</p>
+          <div class="option-grid">
+            <label class="option"><input type="checkbox" name="studyFocus" value="原料辨識" />原料辨識</label>
+            <label class="option"><input type="checkbox" name="studyFocus" value="香氣結構" />香氣結構</label>
+            <label class="option"><input type="checkbox" name="studyFocus" value="配方比例" />配方比例</label>
+            <label class="option"><input type="checkbox" name="studyFocus" value="香氣持久度" />香氣持久度</label>
+            <label class="option"><input type="checkbox" name="studyFocus" value="配方修正" />配方修正</label>
+            <label class="option"><input type="checkbox" name="studyFocus" value="不同載體應用" />不同載體應用</label>
+          </div>
+          <div style="margin-top:10px;">
+            <textarea id="studyMore" placeholder="其他希望了解的內容或想解決的問題，可自由填寫"></textarea>
+          </div>
         </div>
 
         <div class="field consent">
@@ -244,10 +255,10 @@
 姓名：${payload.name}
 性別：${payload.gender || "未填寫"}
 上過課程：${payload.courses.length ? payload.courses.join("、") : "未填寫"}
-來上課的目的：${payload.purpose.length ? payload.purpose.join("、") : "未填寫"}
+進修方向：${payload.purpose.length ? payload.purpose.join("、") : "未填寫"}
 喜歡的香水名稱或品牌：${payload.favoritePerfume || "未填寫"}
 目前偏好的香調：${payload.preferredFamily.length ? payload.preferredFamily.join("、") : "未填寫"}
-還想進修：${payload.studyMore || "未填寫"}
+本次課程學習需求：${payload.studyMore || "未填寫"}
 
 資料使用同意：${payload.consentText}`;
     }
@@ -273,6 +284,10 @@
       const coursesOther = $("#coursesOther").value.trim();
       if(coursesOther) courses.push(coursesOther);
 
+      const studyFocus = valuesByName("studyFocus");
+      const studyMore = $("#studyMore").value.trim();
+      if(studyMore) studyFocus.push(studyMore);
+
       const payload = {
         submittedAt:new Date().toISOString(),
         formType:"course_intake_only",
@@ -282,7 +297,7 @@
         purpose:valuesByName("purpose"),
         favoritePerfume:$("#favoritePerfume").value.trim(),
         preferredFamily:valuesByName("preferredFamily"),
-        studyMore:$("#studyMore").value.trim(),
+        studyMore:studyFocus.join("、"),
         answers:[],
         answerLog:[],
         scores:{A:0,B:0,C:0,D:0,E:0,F:0,G:0},
