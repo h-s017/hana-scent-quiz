@@ -252,7 +252,7 @@
 
   <script src="https://hanascent.com/assets/cms-config.js"></script>
   <script>
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzZ-i9zat_U57yJmHkTnEhIYsxNU3l5UMpmHCLkivz06PVtrccQhfS6SzTwnoewTO5t/exec";
+
     const $ = selector => document.querySelector(selector);
     const $$ = selector => [...document.querySelectorAll(selector)];
 
@@ -313,15 +313,18 @@
 資料使用同意：${payload.consentText}`;
     }
 
+    let intakeAttempt=null, intakeBusy=false, intakeCompleted=false;
     async function sendToGoogleSheet(payload){
-      if(!GOOGLE_SCRIPT_URL) return {ok:false, skipped:true};
-      await fetch(GOOGLE_SCRIPT_URL, {
-        method:"POST",
-        mode:"no-cors",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify(payload)
+      const signature=JSON.stringify({...payload,submittedAt:undefined});
+      if(intakeAttempt && intakeAttempt.signature!==signature) throw new Error('pending_submission_changed');
+      if(!intakeAttempt) intakeAttempt={signature,payload:{...payload,submissionId:crypto.randomUUID()}};
+      const response=await fetch("https://ihmvziqisputjnjkuhvm.supabase.co/functions/v1/hana-intake", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        signal:AbortSignal.timeout(45000),body:JSON.stringify(intakeAttempt.payload)
       });
-      return {ok:true};
+      const result=await response.json();
+      if(!response.ok || result.ok!==true || result.submissionId!==intakeAttempt.payload.submissionId) throw new Error('save_not_verified');
+      intakeCompleted=true;return {ok:true};
     }
 
     $("#studentToolsNewsletter").addEventListener("change", event => {
@@ -333,6 +336,7 @@
 
     $("#intakeForm").addEventListener("submit", async event => {
       event.preventDefault();
+      if(intakeBusy||intakeCompleted)return;
       const name = $("#studentName").value.trim();
       if(!name){ toast("請先填寫名字"); return; }
       if(!$("#consent").checked){ toast("請勾選資料使用同意"); return; }
@@ -387,6 +391,7 @@
       $("#submitNotice").textContent = "正在傳送課程問卷" + (studentToolsNewsletterOptIn ? "，並登記氣味通信訂閱…" : "…");
       $("#resultSection").scrollIntoView({behavior:"smooth", block:"start"});
 
+      intakeBusy=true; $("#intakeForm button[type=submit]").disabled=true;
       const submissions = await Promise.allSettled([
         sendToGoogleSheet(payload),
         studentToolsNewsletterOptIn ? subscribeNewsletter(name,studentToolsNewsletterEmail) : Promise.resolve("not_requested")
@@ -394,8 +399,8 @@
       const intakeSent = submissions[0].status==="fulfilled";
       const subscription = submissions[1];
       let message = intakeSent
-        ? "課程問卷已送出，感謝您的填寫。"
-        : "課程問卷傳送未完成，請保留摘要並聯繫老師確認。";
+        ? "課程問卷已確認儲存，老師可在 HANA FOCUS 查看新回覆。"
+        : "尚未核實儲存結果。請保留本頁，稍後用相同資料再按一次送出；不要重填，或聯繫老師確認。";
       if(studentToolsNewsletterOptIn){
         if(subscription.status==="fulfilled" && subscription.value==="subscribed"){
           message += "《氣味通信》已完成訂閱。請繼續下方學員工具申請步驟。";
@@ -407,6 +412,7 @@
         }
       }
       $("#submitNotice").textContent = message;
+      intakeBusy=false; $("#intakeForm button[type=submit]").disabled=intakeCompleted;
     });
 
     $("#copyBtn").addEventListener("click", async () => {
@@ -421,6 +427,9 @@
     $("#printBtn").addEventListener("click", () => window.print());
 
     $("#resetBtn").addEventListener("click", () => {
+      if(intakeBusy)return;
+      if(intakeAttempt&&!intakeCompleted){toast("請先確認上一筆問卷儲存結果，再重新填寫。");return;}
+      intakeAttempt=null;intakeCompleted=false;$("#intakeForm button[type=submit]").disabled=false;
       $("#intakeForm").reset();
       $("#optInDetails").hidden = true;
       $("#optInEmail").required = false;
